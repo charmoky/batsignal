@@ -335,7 +335,6 @@ int main(int argc, char *argv[])
         update_battery();
         duration = multiplier;
 
-        printf("Update start : Battery state %u && battery level %u\n", battery_state, battery_level);
 
         if (battery_discharging) { /* discharging */
             if (danger && battery_level <= danger) {
@@ -376,7 +375,6 @@ int main(int argc, char *argv[])
             else { battery_state = STATE_AC; }
         }
 
-        printf("Update end : Battery state %u \n", battery_state);
         sleep(duration);
     }
 
