@@ -62,7 +62,7 @@ static unsigned int full = 0;
 static char *warningmsg = "Battery low";
 static char *criticalmsg = "Battery critically low";
 static char *dangermsg = "Battery dangerously low";
-static char *fullmsg = "Battery is full";
+static char *fullmsg = "Battery full";
 
 /* icons for battery levels */
 static char *warning_icon = "battery-low";
@@ -335,24 +335,27 @@ int main(int argc, char *argv[])
         update_battery();
         duration = multiplier;
 
+        printf("Update start : Battery state %u && battery level %u\n", battery_state, battery_level);
+
         if (battery_discharging) { /* discharging */
-            if (danger && battery_level <= danger && battery_state != STATE_DANGER) {
+            if (danger && battery_level <= danger) {
+                if (battery_state != STATE_DANGER) {
+                    notify(dangermsg, NOTIFY_URGENCY_CRITICAL, danger_icon);
+                    if (dangercmd[0] != '\0')
+                        if (system(dangercmd) == -1) { /* Ignore command errors... */ }
+                }
                 battery_state = STATE_DANGER;
-                notify(dangermsg, NOTIFY_URGENCY_CRITICAL, danger_icon);
-                if (dangercmd[0] != '\0')
-                    if (system(dangercmd) == -1) { /* Ignore command errors... */ }
-
-            } else if (critical && battery_level <= critical && battery_state != STATE_CRITICAL) {
+            } else if (critical && battery_level <= critical) {
+                if( battery_state != STATE_CRITICAL) {
+                    notify(criticalmsg, NOTIFY_URGENCY_CRITICAL, critical_icon);
+                }
                 battery_state = STATE_CRITICAL;
-                notify(criticalmsg, NOTIFY_URGENCY_CRITICAL, critical_icon);
-
             } else if (warning && battery_level <= warning) {
                 duration = (battery_level - critical) * multiplier;
                 if (battery_state != STATE_WARNING) {
-                    battery_state = STATE_WARNING;
                     notify(warningmsg, NOTIFY_URGENCY_NORMAL, warning_icon);
                 }
-
+                battery_state = STATE_WARNING;
             } else {
                 battery_state = STATE_DISCHARGING;
                 duration = (battery_level - warning) * multiplier;
@@ -366,14 +369,14 @@ int main(int argc, char *argv[])
                     if (system(undocmd) == -1) { /* Ignore command errors... */ }
             }
 
-            battery_state = STATE_AC;
-
             if (full && battery_level >= full && battery_state != STATE_FULL) {
                 battery_state = STATE_FULL;
                 notify(fullmsg, NOTIFY_URGENCY_NORMAL, full_icon);
             }
+            else { battery_state = STATE_AC; }
         }
 
+        printf("Update end : Battery state %u \n", battery_state);
         sleep(duration);
     }
 
