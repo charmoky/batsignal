@@ -344,20 +344,22 @@ int main(int argc, char *argv[])
                         if (system(dangercmd) == -1) { /* Ignore command errors... */ }
                 }
                 battery_state = STATE_DANGER;
-            } else if (critical && battery_level <= critical) {
+            } else if (critical && battery_level <= critical && battery_level >= (danger+5)) {
                 if( battery_state != STATE_CRITICAL) {
                     notify(criticalmsg, NOTIFY_URGENCY_CRITICAL, critical_icon);
                 }
                 battery_state = STATE_CRITICAL;
-            } else if (warning && battery_level <= warning) {
+            } else if (warning && battery_level <= warning && battery_level >= (critical+5)) {
                 duration = (battery_level - critical) * multiplier;
                 if (battery_state != STATE_WARNING) {
                     notify(warningmsg, NOTIFY_URGENCY_NORMAL, warning_icon);
                 }
                 battery_state = STATE_WARNING;
             } else {
-                battery_state = STATE_DISCHARGING;
-                duration = (battery_level - warning) * multiplier;
+                if(battery_level >= (warning+5)) {
+                    battery_state = STATE_DISCHARGING;
+                    duration = (battery_level - warning) * multiplier;
+                }
             }
 
         } else { /* charging */
@@ -372,7 +374,11 @@ int main(int argc, char *argv[])
                 battery_state = STATE_FULL;
                 notify(fullmsg, NOTIFY_URGENCY_NORMAL, full_icon);
             }
-            else { battery_state = STATE_AC; }
+            else { 
+                /* Some hysterisis */
+                if(battery_state == full && battery_level < (full-5)) 
+                    battery_state = STATE_AC; 
+            }
         }
 
         sleep(duration);
